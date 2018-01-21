@@ -13,6 +13,9 @@ def translate(x, y, w, h):
     """Convert horizontal coordinates to screen coordinates."""
     return (y, epd2in13.EPD_HEIGHT - x - w)
 
+def center(image_height, item_height):
+    return image_height // 2 - item_height // 2
+
 class Program:
     def __init__(self):
         self.epd = epd2in13.EPD()
@@ -86,11 +89,11 @@ class Program:
                 else:
                     second_screen_fix = False
                 analogue = clocks.analogue(now, (64, 64))
-                self.epd.set_frame_memory(analogue.rotate(90, expand=1), *translate(0, 0, 64, 64))
+                self.epd.set_frame_memory(analogue.rotate(90, expand=1), *translate(screen_width // 2 - 64, center(screen_height, 64), *analogue.size))
 
             # digital clock
-            digital = clocks.digital(now, (96, 16))
-            self.epd.set_frame_memory(digital.rotate(90, expand=1), *translate(64, 0, 96, 16))
+            digital = clocks.digital(now, (48, 16))
+            self.epd.set_frame_memory(digital.rotate(90, expand=1), *translate(screen_width // 2, center(screen_height, 16), *digital.size))
 
            	# display
             self.epd.display_frame()
