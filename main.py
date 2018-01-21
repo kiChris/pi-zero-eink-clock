@@ -10,7 +10,10 @@ import clocks
 
 #screen_size = (epd2in13.EPD_WIDTH, epd2in13.EPD_HEIGHT)
 screen_size = (epd2in13.EPD_HEIGHT, epd2in13.EPD_WIDTH)
-width, height = screen_size
+screen_width, screen_height = screen_size
+
+def translate(x, y, w, h):
+    return (y, epd2in13.EPD_HEIGHT - x - w)
 
 class Program:
     def __init__(self):
@@ -60,7 +63,7 @@ class Program:
         second_screen_fix = False
         while (True):
             # time
-            draw.rectangle((0, 0, width, height), fill = 255)
+            draw.rectangle((0, 0, screen_width, screen_height), fill = 255)
             now = datetime.datetime.now()
 
             # analogue clock
@@ -71,10 +74,10 @@ class Program:
                 else:
                     second_screen_fix = False
                 analogue = clocks.analogue(now, (64, 64))
-                self.epd.set_frame_memory(analogue.rotate(90, expand=1), 0, 96)
+                self.epd.set_frame_memory(analogue.rotate(90, expand=1), *translate(0, 0, 64, 64))
 
             digital = clocks.digital(now, (96, 16))
-            self.epd.set_frame_memory(digital.rotate(90, expand=1), 0, 0)
+            self.epd.set_frame_memory(digital.rotate(90, expand=1), *translate(64, 0, 96, 16))
 
            	# display
             self.epd.display_frame()
