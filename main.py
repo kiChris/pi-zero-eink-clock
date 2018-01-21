@@ -2,9 +2,7 @@
 import epd2in13
 import time
 import datetime
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 import clocks
 
