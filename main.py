@@ -18,7 +18,11 @@ def translate(x, y, w, h):
 class Program:
     def __init__(self):
         self.epd = epd2in13.EPD()
-        self.reset_to_partial()
+
+        # need full for proper screen refresh
+        self.reset_to_full()
+
+        self.set_to_partial()
 
     def clear(self):
         screen = Image.new('1', (epd2in13.EPD_WIDTH, epd2in13.EPD_HEIGHT), 255)
@@ -31,12 +35,18 @@ class Program:
         self.epd.set_frame_memory(screen, 0, 0)
         self.epd.display_frame()
 
-    def reset_to_partial(self):
+    def set_to_partial(self):
         self.epd.init(self.epd.lut_partial_update)
+
+    def set_to_full(self):
+        self.epd.init(self.epd.lut_full_update)
+
+    def reset_to_partial(self):
+        self.set_to_partial()
         self.clear()
 
     def reset_to_full(self):
-        self.epd.init(self.epd.lut_full_update)
+        self.set_to_full()
         self.clear()
 
     def run(self):
@@ -53,6 +63,8 @@ class Program:
         self.epd.display_frame()
         self.epd.set_frame_memory(image.rotate(180), 0, 0)
         self.epd.display_frame()
+
+        self.epd.delay_ms(800)
 
         print("start displaying clock")
         # start printing stuff
