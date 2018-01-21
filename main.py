@@ -8,11 +8,11 @@ from PIL import ImageFont
 
 import clocks
 
-#screen_size = (epd2in13.EPD_WIDTH, epd2in13.EPD_HEIGHT)
 screen_size = (epd2in13.EPD_HEIGHT, epd2in13.EPD_WIDTH)
 screen_width, screen_height = screen_size
 
 def translate(x, y, w, h):
+    """Convert horizontal coordinates to screen coordinates."""
     return (y, epd2in13.EPD_HEIGHT - x - w)
 
 class Program:
@@ -25,9 +25,11 @@ class Program:
         self.set_to_partial()
 
     def clear(self):
+        """Clear the screen."""
+        # create empty image
         screen = Image.new('1', (epd2in13.EPD_WIDTH, epd2in13.EPD_HEIGHT), 255)
-        screen_draw = ImageDraw.Draw(screen)
-        screen_draw.rectangle((0, 0, epd2in13.EPD_WIDTH, epd2in13.EPD_HEIGHT), fill=255)
+
+        # clear both framebuffers
         self.epd.clear_frame_memory(0xFF)
         self.epd.set_frame_memory(screen, 0, 0)
         self.epd.display_frame()
@@ -36,46 +38,46 @@ class Program:
         self.epd.display_frame()
 
     def set_to_partial(self):
+        """Enable partial refresh."""
         self.epd.init(self.epd.lut_partial_update)
 
     def set_to_full(self):
+        """Enable full refresh."""
         self.epd.init(self.epd.lut_full_update)
 
     def reset_to_partial(self):
+        """Enable partial refresh and clear the screen."""
         self.set_to_partial()
         self.clear()
 
     def reset_to_full(self):
+        """Enable full refresh and clear the screen."""
         self.set_to_full()
         self.clear()
 
     def run(self):
+        """Main loop."""
         print("display image")
-        # For simplicity, the arguments are explicit numerical coordinates
         image = Image.open('monocolor.bmp')
-        ##
-         # there are 2 memory areas embedded in the e-paper display
-         # and once the display is refreshed, the memory area will be auto-toggled,
-         # i.e. the next action of SetFrameMemory will set the other memory area
-         # therefore you have to set the frame memory twice.
-        ##
+
+        # set both framebuffers to the image as clock background
         self.epd.set_frame_memory(image.rotate(180), 0, 0)
         self.epd.display_frame()
         self.epd.set_frame_memory(image.rotate(180), 0, 0)
         self.epd.display_frame()
 
+        # let the image show up
         self.epd.delay_ms(800)
 
         print("start displaying clock")
-        # start printing stuff
-        screen = Image.new('1', (150, 32), 255)  # 255: clear the frame
-        draw = ImageDraw.Draw(screen)
         font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 32)
         last_minute = -1
+
+        # hack to have the analogue clock update on both framebuffers every minute
         second_screen_fix = False
-        while (True):
+
+        while True:
             # time
-            draw.rectangle((0, 0, screen_width, screen_height), fill = 255)
             now = datetime.datetime.now()
 
             # analogue clock
@@ -88,6 +90,7 @@ class Program:
                 analogue = clocks.analogue(now, (64, 64))
                 self.epd.set_frame_memory(analogue.rotate(90, expand=1), *translate(0, 0, 64, 64))
 
+            # digital clock
             digital = clocks.digital(now, (96, 16))
             self.epd.set_frame_memory(digital.rotate(90, expand=1), *translate(64, 0, 96, 16))
 
