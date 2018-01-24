@@ -20,6 +20,8 @@ class Program:
     def __init__(self):
         self.epd = epd2in13.EPD()
 
+        self.background = Image.open('monocolor.bmp').rotate(180)
+
         # need full for proper screen refresh
         self.reset_to_full()
 
@@ -56,40 +58,53 @@ class Program:
         self.set_to_full()
         self.clear()
 
-    def run(self):
-        """Main loop."""
-        print("display image")
-        image = Image.open('monocolor.bmp')
-
+    def draw_background(self):
+        """Redraw the background image."""
         # set both framebuffers to the image as clock background
-        self.epd.set_frame_memory(image.rotate(180), 0, 0)
+        self.epd.set_frame_memory(self.background, 0, 0)
         self.epd.display_frame()
-        self.epd.set_frame_memory(image.rotate(180), 0, 0)
+        self.epd.set_frame_memory(self.background, 0, 0)
         self.epd.display_frame()
 
         # let the image show up
-        self.epd.delay_ms(800)
+        self.epd.delay_ms(500)
+
+    def run(self):
+        """Main loop."""
+        print("display image")
+        self.draw_background()
 
         print("start displaying clock")
         font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 32)
         last_minute = -1
 
-        # hack to have the analogue clock update on both framebuffers every minute
-        second_screen_fix = False
+        analogue_refresh = False
 
         while True:
             # time
             now = datetime.datetime.now()
 
-            # analogue clock
-            if second_screen_fix or last_minute != now.minute:
-                last_minute = now.minute
-                if not second_screen_fix:
-                    second_screen_fix = True
-                else:
-                    second_screen_fix = False
+            # fix for second framebuffer
+            if analogue_refresh:
                 analogue = clocks.analogue(now, (64, 64))
                 self.epd.set_frame_memory(analogue.rotate(90, expand=1), *translate(screen_width // 2 - 64, center(screen_height, 64), *analogue.size))
+                analogue_refresh = False
+
+            # analogue clock
+            # every minute
+            if now.minute != last_minute:
+                # clear screen every 15 min
+                if (now.minute % 15) == 0:
+                    self.reset_to_full()
+                    self.set_to_partial()
+                    self.draw_background()
+
+                last_minute = now.minute
+
+                # refresh analogue clock every min
+                analogue = clocks.analogue(now, (64, 64))
+                self.epd.set_frame_memory(analogue.rotate(90, expand=1), *translate(screen_width // 2 - 64, center(screen_height, 64), *analogue.size))
+                analogue_refresh = True
 
             # digital clock
             digital = clocks.digital(now, (48, 16))
